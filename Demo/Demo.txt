@@ -1,0 +1,3 @@
+- Chạy file notebook trên colab trước sau đó add 3 file index.html, model.py, server.py để render ứng dụng web.
+
+Link video demo: https://drive.google.com/file/d/1_MTJXbbNOuyIcoYScWFCnYlvJg5EWRsx/view?usp=drive_link

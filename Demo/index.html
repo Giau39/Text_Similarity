@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trà đào cam sả</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+
+
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <a class="navbar-brand" href="#">
+            <img src="" width="40" height="30" class="d-inline-block align-top" alt="">
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Playground<span class="sr-only">(current)</span></a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <div class="col-lg">
+                <div class="card border-0 rounded">
+                    <div class="card-header bg-transparent">
+                        <h1>Similarities between English and Vietnamese cross-language texts</h1>
+                    </div>
+                    <div class="card-body">
+                        <form class="need-validation">
+                            <div class="form-row">
+                                <div class="col-sm">
+                                    <select class="custom-select" id="task" required>
+                                        <option value="">Select a task</option>
+                                        <option value="distance">Similarity Measure</option>
+
+                                    </select>
+                                </div>
+                                <div class="col-sm">
+                                    <div class="input-group" id="numClustersGroup" style="display: none;">
+                                        <input type="number" min="1" class="form-control" id="numOfClusters" value="4"
+                                            aria-describedby="inputGroupPrepend" required>
+                                        <div class="input-group-prepend">
+                                            <span class="input-group-text" id="inputGroupPrepend">clusters</span>
+                                        </div>
+                                        <div class="invalid-feedback" id="numOfClusters_feedback"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group mt-2">
+                                <label>Enter each sentence on a line.</label>
+                                <textarea class="form-control" id="inputText" rows="9"
+                                    placeholder="Enter 2 sentences to measure similarity or more for clustering."
+                                    required></textarea>
+                                <div class="invalid-feedback" id="inputText_feedback"></div>
+                            </div>
+                        </form>
+                        <div class="row">
+                            <div class="col">
+                                <button class="btn btn-primary col-sm-4 btn-lg float-right btn-block"
+                                    id="doInference">Process</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg">
+                <div class="card border-0 rounded">
+                    <div class="card-header bg-transparent">
+                        <h1>Result</h1>
+                    </div>
+                    <div class="card-body text-center" id=inferenceResult>
+
+                    </div>
+                    <div class="card-footer text-center" id="footer"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
+        integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+        crossorigin="anonymous"></script>
+    <script src="https://bernii.github.io/gauge.js/dist/gauge.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        (() => {
+            window.addEventListener('load', () => {
+                if ($("#task").val() == "clustering") $("#numClustersGroup").show()
+                // Fetch all the forms we want to apply custom Bootstrap validation styles to
+                var forms = document.getElementsByClassName('need-validation');
+                // Loop over them and prevent submission
+                var validation = Array.prototype.filter.call(forms, (form) => {
+                    form.addEventListener('submit', (event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }, false);
+                });
+            }, false);
+        })();
+
+        $("#task").change(() => {
+            if ($("#task").val() == "clustering") {
+                $("#numClustersGroup").show()
+            } else {
+                $("#numClustersGroup").hide()
+            }
+        });
+
+        // Gauge
+        var opts = {
+            angle: 0.0, // The span of the gauge arc
+            lineWidth: 0.44, // The line thickness
+            radiusScale: 1, // Relative radius
+            pointer: {
+                length: 0.5, // // Relative to gauge radius
+                strokeWidth: 0.035, // The thickness
+                color: '#000000' // Fill color
+            },
+            limitMax: false,     // If false, max value increases automatically if value > maxValue
+            limitMin: false,     // If true, the min value of the gauge will be fixed
+            generateGradient: true,
+            highDpiSupport: true,     // High resolution support
+            percentColors: [[0.0, "#FF0000"], [0.50, "#0080FF"], [1.0, "#4C9900"]], // !!!!
+            strokeColor: '#E0E0E0',
+        };
+
+        // do inference
+        var inferenceServer = "{{ serveradd }}";
+
+        var inferenceBtn = $("#doInference");
+        inferenceBtn.on("click", () => {
+            var task = $("#task").val();
+            var text = $("#inputText").val();
+            var num_cluster = parseInt($("#numOfClusters").val());
+
+            if (!["distance", "clustering"].includes(task) || !(num_cluster >= 1)) return;
+
+            var ArrOfSentences = text.split(/[\r\n]+/).filter(e => e);
+
+            if (task == "distance") {
+                if (ArrOfSentences.length != 2) {
+                    $("#inputText_feedback").html("Please enter 2 sentences to measure distance.")
+                    $("#inputText").addClass("is-invalid");
+                    return;
+                }
+                $("#inputText").removeClass("is-invalid");
+
+                // change status of process button to loading
+                inferenceBtn.html(
+                    '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'
+                )
+                inferenceBtn.addClass("disabled");
+
+                axios.post(inferenceServer + "measure_dis", {
+                    sents: ArrOfSentences
+                })
+                    .then((response) => {
+                        console.log(response.data);
+
+                        if (!document.getElementById("gauge_sim")) {
+                            $("#inferenceResult").html('<canvas id="gauge_sim" height="300" width="500"></canvas>');
+                        }
+
+                        cosine_sim = 1 - response.data.cosine
+                        if (cosine_sim < 0.5) {
+                            similarity_level = "Không tương đồng"
+                        }
+                        else if (cosine_sim < 0.8) {
+                            similarity_level = "Khá tương đồng"
+                        }
+
+                        else {
+                            similarity_level = "Tương đồng"
+                        }
+
+                        $("#footer").html(`<h3>Cosine similarity: ${similarity_level}</h3>`);
+
+
+                        var target = document.getElementById('gauge_sim'); // your canvas element
+                        var gauge = new Gauge(target).setOptions(opts); // create sexy gauge!
+                        gauge.maxValue = 10; // set max gauge value
+                        gauge.setMinValue(-10);  // Prefer setter over gauge.minValue = 0
+                        gauge.animationSpeed = 15; // set animation speed (32 is default value)
+                        gauge.set(cosine_sim * 10); // set actual value
+                    })
+                    .catch((error) => console.log(error))
+                    .finally(() => {
+                        // reset status of process btn
+                        inferenceBtn.removeClass("disabled");
+                        inferenceBtn.html('Process');
+                    })
+            } else {
+                if (ArrOfSentences.length < 2) {
+                    $("#inputText_feedback").html("Please enter more than 2 sentences to perform clustering.")
+                    $("#inputText").addClass("is-invalid");
+                    return;
+                }
+                if (ArrOfSentences.length < num_cluster) {
+                    $("#numOfClusters_feedback").html("Number of clusters must be greater than or equal to number of sentences.")
+                    $("#numOfClusters").addClass("is-invalid");
+                    return;
+                }
+
+                $("#numOfClusters").removeClass("is-invalid");
+                $("#inputText").removeClass("is-invalid");
+
+                window.PLOTLYENV = window.PLOTLYENV || {};
+
+                if (!document.getElementById("plotly")) {
+                    $("#inferenceResult").html('<div id="plotly" class="plotly-graph-div" style="height:100%; width:100%;"></div>');
+                }
+
+                $("#footer").html('');
+
+                // change status of process button to loading
+                inferenceBtn.html(
+                    '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>'
+                )
+                inferenceBtn.addClass("disabled");
+
+                axios.post(inferenceServer + "cluster", {
+                    corpus: ArrOfSentences,
+                    n_clusters: num_cluster
+                })
+                    .then((response) => {
+                        eval(response.data.plot_html);
+                        console.log(response.data.plot_html);
+                    })
+                    .catch((error) => console.log(error))
+                    .finally(() => {
+                        // reset status of process btn
+                        inferenceBtn.removeClass("disabled");
+                        inferenceBtn.html('Process');
+                    })
+
+
+            }
+        })
+    </script>
+</body>
+
+</html>
